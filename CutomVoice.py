@@ -18,20 +18,22 @@ INPUT_DIR_E = INPUT_DIR_BASE + "Stock3000_1_E/"
 INPUT_DIR_EJ = INPUT_DIR_BASE + "Stock3000_2_EJ/"
 INPUT_DIR_EX = INPUT_DIR_BASE + "Stock3000_4_EX/"
 OUTPUT_DIR_BASE = "./output/"
-SOUND_MODE_EJ_BLNK_EX = 1
-SOUND_MODE_EJ_EX_EX = 2
+SOUND_MODE_EJ_BLNK_EX = 0
+SOUND_MODE_EJ_EX_EX = 1
+SOUND_MODE_EJ_BLNK_EX_EX = 2
 SOUND_MODE_REG = [
-    "Stock3000_EJ_BLNK_EX",
+    "Stock3000_EJ_BK_EX",
     "Stock3000_EJ_EX_EX", 
+    "Stock3000_EJ_BK_EX_EX"
 ]
 
 # 設定
-SOUND_MODE = SOUND_MODE_EJ_EX_EX
+SOUND_MODE = SOUND_MODE_EJ_BLNK_EX_EX
 OUTPUT_CHUNK_NUM = 60
 DEBUG_MODE = FALSE
 
 # 環境変数定義(その2 Do Not Modify)
-OUTPUT_TITLE = SOUND_MODE_REG[SOUND_MODE-1]
+OUTPUT_TITLE = SOUND_MODE_REG[SOUND_MODE]
 OUTPUT_DIR_PREFIX = OUTPUT_DIR_BASE + OUTPUT_TITLE + "/"
 
 ###############################################################################
@@ -42,6 +44,7 @@ class SoundProcMod:
     silent_200ms = AudioSegment.silent(duration=200)
     silent_1000ms = AudioSegment.silent(duration=1000)
     silent_1500ms = AudioSegment.silent(duration=1500)
+    silent_10s = AudioSegment.silent(duration=10000)
     
     def __init__(self):
         self.output_dir = None
@@ -83,7 +86,7 @@ class SoundProcMod:
                 dir_index = int(word_index / OUTPUT_CHUNK_NUM)
                 word_index_st = (dir_index * OUTPUT_CHUNK_NUM) + 1
                 word_index_ed = ((dir_index + 1) * OUTPUT_CHUNK_NUM)
-                self.output_dir = OUTPUT_DIR_PREFIX + OUTPUT_TITLE + "_" + str(word_index_st) + "_" + str(word_index_ed) + "/"
+                self.output_dir = OUTPUT_DIR_PREFIX + OUTPUT_TITLE + "_" + str(word_index_st).zfill(4) + "_" + str(word_index_ed).zfill(4) + "/"
                 os.makedirs(self.output_dir, exist_ok=True)
 
             # Progress表示
@@ -96,10 +99,12 @@ class SoundProcMod:
                 record = SoundProcMod.silent_200ms + chunks_ej[i * 2] + SoundProcMod.silent_1000ms + chunks_ej[i * 2 + 1] + SoundProcMod.silent_1000ms + silent_ex + chunk_ex + silent_ex
             elif SOUND_MODE == SOUND_MODE_EJ_EX_EX:
                 record = SoundProcMod.silent_200ms + chunks_ej[i * 2] + SoundProcMod.silent_1000ms + chunks_ej[i * 2 + 1] + SoundProcMod.silent_1000ms + chunk_ex + SoundProcMod.silent_1500ms + chunk_ex + silent_ex
-            
+            elif SOUND_MODE == SOUND_MODE_EJ_BLNK_EX_EX:
+                record = SoundProcMod.silent_200ms + chunks_ej[i * 2] + SoundProcMod.silent_1000ms + chunks_ej[i * 2 + 1] + SoundProcMod.silent_10s + chunk_ex + SoundProcMod.silent_1500ms + chunk_ex + silent_ex
+
             # 出力ディレクトリが有効なら出力
             if self.output_dir != None:
-                save_filename = self.output_dir + filename_prefix + "_" + str(word_index) +".mp3"
+                save_filename = self.output_dir + SOUND_MODE_REG[SOUND_MODE] + "_" + str(word_index).zfill(4) +".mp3"
                 record.export(save_filename, format="mp3")
             else:
                 print("Error: output_dir is invalid")
