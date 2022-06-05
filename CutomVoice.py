@@ -35,31 +35,13 @@ OUTPUT_TITLE = SOUND_MODE_REG[SOUND_MODE-1]
 OUTPUT_DIR_PREFIX = OUTPUT_DIR_BASE + OUTPUT_TITLE + "/"
 
 ###############################################################################
-# グローバル変数
-###############################################################################
-# 音声ファイルLoad
-files_ej = sorted(glob.glob(INPUT_DIR_EJ + "*"))
-files_ex = sorted(glob.glob(INPUT_DIR_EX + "*"))
-
-# 挿入用の無音生成
-silent_200ms = AudioSegment.silent(duration=200)
-silent_1000ms = AudioSegment.silent(duration=1000)
-silent_1500ms = AudioSegment.silent(duration=1500)
-
-# デバッグモード対応
-# 途中でエラー停止した際、毎回先頭から再開しないで済むよう完了したファイルを記録しておき、
-# 途中から再開できるようにする
-if DEBUG_MODE == TRUE:
-    edited_list = pd.read_csv(EDITED_LIST_FILE)
-    df_edited_list = pd.DataFrame(data=edited_list, columns=["file"])
-
-# 処理単語数
-word_index = 0
-
-###############################################################################
 # クラス
 ###############################################################################
 class SoundProcMod:
+
+    silent_200ms = AudioSegment.silent(duration=200)
+    silent_1000ms = AudioSegment.silent(duration=1000)
+    silent_1500ms = AudioSegment.silent(duration=1500)
     
     def __init__(self):
         self.output_dir = None
@@ -111,9 +93,9 @@ class SoundProcMod:
             chunk_duration = chunk_ex.duration_seconds * 1000
             silent_ex = AudioSegment.silent(duration=chunk_duration)
             if SOUND_MODE == SOUND_MODE_EJ_BLNK_EX:
-                record = silent_200ms + chunks_ej[i * 2] + silent_1000ms + chunks_ej[i * 2 + 1] + silent_1000ms + silent_ex + chunk_ex + silent_ex
+                record = SoundProcMod.silent_200ms + chunks_ej[i * 2] + SoundProcMod.silent_1000ms + chunks_ej[i * 2 + 1] + SoundProcMod.silent_1000ms + silent_ex + chunk_ex + silent_ex
             elif SOUND_MODE == SOUND_MODE_EJ_EX_EX:
-                record = silent_200ms + chunks_ej[i * 2] + silent_1000ms + chunks_ej[i * 2 + 1] + silent_1000ms + chunk_ex + silent_1500ms + chunk_ex + silent_ex
+                record = SoundProcMod.silent_200ms + chunks_ej[i * 2] + SoundProcMod.silent_1000ms + chunks_ej[i * 2 + 1] + SoundProcMod.silent_1000ms + chunk_ex + SoundProcMod.silent_1500ms + chunk_ex + silent_ex
             
             # 出力ディレクトリが有効なら出力
             if self.output_dir != None:
@@ -132,6 +114,20 @@ class SoundProcMod:
 ###############################################################################
 # メイン
 ###############################################################################
+# 音声ファイルLoad
+files_ej = sorted(glob.glob(INPUT_DIR_EJ + "*"))
+files_ex = sorted(glob.glob(INPUT_DIR_EX + "*"))
+
+# デバッグモード対応
+# 途中でエラー停止した際、毎回先頭から再開しないで済むよう完了したファイルを記録しておき、
+# 途中から再開できるようにする
+if DEBUG_MODE == TRUE:
+    edited_list = pd.read_csv(EDITED_LIST_FILE)
+    df_edited_list = pd.DataFrame(data=edited_list, columns=["file"])
+
+# 処理単語数
+word_index = 0
+
 # 例文、音声/日本語ファイルは10単語ずつになっているため、
 # 1単語ずつに分解し、任意の組み合わせで音声ファイルを生成する（日本語＋英語＋例文x2など）
 # 分割したデータ毎にファイルに出力
@@ -147,12 +143,12 @@ for file_index, file_ex in enumerate(files_ex):
     print(file_ej)
     filename_prefix = file_ex.split("/")[2].split(".")[0]
 
-    # 編集リスト更新
-    # 対象の例文ファイルが編集済みリストにあるかサーチ
-    # 無ければ追加
-    # 既にあるなら以降の処理をスキップ
-    # 対象のファイル名検索
+    # 音声処理
     if DEBUG_MODE == TRUE:
+        # 対象の例文ファイルが編集済みリストにあるかサーチ
+        # 無ければ追加
+        # 既にあるなら以降の処理をスキップ
+        # 対象のファイル名検索
         file_match_num = (df_edited_list[LIST_COL_NAME] == filename_ex).sum()
         if (file_match_num > 0):
             print("Already Edited. :", filename_ex)
